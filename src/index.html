@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>评论框</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" href="css/emoji.css">
+    <style type="text/css">
+        .emoticons {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            border: 1px solid red;
+            border-radius: 4px;
+        }
+
+        .emoticons .publisher {
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .emoticons .publisher .text-area {
+            width: 100%;
+            height: 140px;
+            resize: none;
+        }
+
+        .emoticons .publisher .trigger {
+            font-size: 24px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .emoticons .publisher .trigger-active {
+            color: #eb7350;
+        }
+
+        .emoticons .result {
+            padding: 10px 15px;
+            border: 1px dotted #dbdbdb;
+            margin-top: 40px;
+            height: 150px;
+            line-height: 24px;
+        }
+
+        .emoticons .result img {
+            vertical-align: middle;
+        }
+
+        .emoticons .imgcontainer {
+            padding: 10px 15px;
+            border: 1px dotted #dbdbdb;
+            margin-top: 40px;
+            line-height: 24px;
+        }
+
+        .emojicontainer {
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .emojicontainer ul {
+            width: 60%;
+            padding: 15px 5px 20px;
+            overflow: hidden;
+            list-style: none;
+            border: 1px solid #F0F1F1;
+            border-radius: 5px;
+            margin: 0 20px;
+            -webkit-box-shadow:0px 3px 3px #c8c8c8 ;
+            -moz-box-shadow:0px 3px 3px #c8c8c8 ;
+            box-shadow:0px 3px 3px #c8c8c8 ;
+        }
+
+        .emojicontainer li {
+            position: relative;
+            z-index: 8;
+            float: left;
+            width: 30px;
+            height: 30px;
+            padding: 4px;
+            margin-left: -1px;
+            margin-top: -1px;
+            border: 1px solid #e8e8e8;
+            cursor: pointer;
+        }
+
+        .emojicontainer li:hover {
+            z-index: 9;
+            border-color: #eb7350;
+        }
+        .large{
+            -webkit-transform:scale(1.5);
+            transform:scale(1.5)
+        }
+
+        .fl {
+            float: left;
+        }
+
+        .fr {
+            float: right;
+        }
+
+        .publisher .sns {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin-left: 24px;
+            cursor: pointer;
+            background-repeat: no-repeat;
+        }
+
+        .publisher .expression {
+            background-image: url(images/expression.png), none;
+        }
+
+        .publisher .view {
+            background-image: url(images/view.png), none;
+        }
+
+        .publisher .send {
+            background-image: url(images/send.png), none;
+        }
+
+        .publisher .picture {
+            background-image: url(images/picture.png), none;
+        }
+
+        .imgcontainer {
+            width: 100%;
+            overflow: hidden;
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .imgcontainer li {
+            float: left;
+            width: 30%;
+            overflow: hidden;
+            margin: 1px;
+        }
+
+        .imgcontainer li img {
+            width: 100%;
+            height: 110px;
+            -webkit-transition: all 0.6s ease;
+            -moz-transition: all 0.6s ease;
+            -o-transition: all 0.6s ease;
+            -ms-transition: all 0.6s ease;
+            transition: all 0.6s ease;
+        }
+
+        .singleimg {
+            width: 100% !important;
+        }
+
+        .singleimg img {
+            width: 100%;
+            min-height: 300px !important;
+            max-height: 400px !important;
+            -webkit-transition: all 0.6s ease;
+            -moz-transition: all 0.6s ease;
+            -o-transition: all 0.6s ease;
+            -ms-transition: all 0.6s ease;
+            transition: all 0.6s ease;
+        }
+
+    </style>
+</head>
+<body>
+<div id="app" style="padding:0 30px" @click="chooseclose($event)">
+    <div style="width: 60%;margin: auto;padding: 20px;border: 1px solid red">
+        <div class="emoticons">
+            <div class="publisher">
+                <p><textarea class="text-area" ref='content' v-model="content"  contenteditable="true"></textarea></p>
+                <span class="sns expression fl" id="choose" @click="choose"></span>
+                <input ref='upload' name="file" multiple="multiple" @change="uploadFile(this);" accept="image/*"
+                       type="file" style="display: none">
+                <span class="sns picture fl" @click="picture"></span>
+                <span class="sns send fr" @click="send"></span>
+                <span class="sns view fr format"></span>
+                <div id="emojicontainer" class="emojicontainer" v-show="emojishow&&emojiimageList.length>0">
+                    <ul>
+                        <li v-for="m in emojiimageList">
+                            <span @click="select(m)"  :class="'emoji emoji_'+m"></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div id="result" class="result" v-html="contentFormatStr"></div>
+            <div class="imgcontainer" v-show="imageList.length>0">
+                <ul>
+                    <li v-for="m in imageList">
+                        <img :src="m"/>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+    <script type="text/javascript">
+        var app = new Vue({
+            el: '#app',
+            data: {
+                loading: false,
+                imageList: [],
+                content: '',
+                contentFormatStr: '',
+                emojishow:false,
+                emojiItems:[],
+                emojiimageList:['angry', 'anguished', "astonished", "disappointed",
+                    "blush", "bowtie", "zan", "cold_sweat", "confounded", "confused",
+                    "cry", "crying_cat_face",
+                    "relieved", "satisfied", "point_up_2",
+                    "relaxed", "scream", "scream_cat", "see_no_evil",
+                    "dizzy_face", "expressionless", "fearful",
+                    "flushed", "frowning", "full_moon_with_face",
+                    "grin", "grinning", "heart_eyes", "heart_eyes_cat",
+                    "hushed", "innocent", "joy", "joy_cat",
+                    "kissing", "kissing_cat", "kissing_heart",
+                    "neutral_face", "open_mouth", "pensive", "persevere",
+                    "rage", "pouting_cat", "sleeping", "sleepy", "smile",
+                    "kissing_smiling_eyes", "laughing", "mask", "smile_cat", "smiling_imp", "smirk",
+                    "smiley", "smirk_cat", "sob", "stuck_out_tongue", "v", "weary", "wink", "worried", "yum",
+                    "sweat_smile", "sweat", "triumph", "unamused",
+                    "heart", "heavy_exclamation_mark",
+                    "stuck_out_tongue_closed_eyes", "stuck_out_tongue_winking_eye", "sun_with_face",
+                    "sunglasses", "tired_face",
+                    "pill", "point_up", "point_down",
+                    "point_left", "point_right", "poop", "pray", "raised_hands",
+                    "tada","balloon", "bicyclist", "beer",
+                    "bomb", "bouquet", "broken_heart", "clap", "crown", "fire", "ghost", "gift", "gift_heart"],
+            },
+            created() {
+                var _this=this;
+                _this.emojiimageList.forEach(function(m){
+                    var tag='<span class="emoji emoji_'+m+'"></span>';
+                    _this.emojiItems.push(tag);
+                })
+            },
+            mounted() {
+
+            },
+            watch:{
+                content:{
+                    handler:function(val,oldval){
+                        this.contentFormatStr=this.contentformat(val);
+                    },
+                    deep:true//对象内部的属性监听
+                }
+            },
+            methods: {
+                uploadFile() {
+                    var _this = this;
+                    var files = _this.$refs.upload.files;
+                    if (files && files.length > 0) {
+                        if (files.length > 9 || (_this.imageList.length + files.length) > 9) {
+                            _this.$message.error("最多上传9张");
+                            return
+                        }
+                        for (var i = 0; i < files.length; i++) {
+                            var reader = new FileReader();
+                            reader.readAsDataURL(files[i]);
+                            reader.onload = function (event) {
+                                var e = event || window.event
+                                _this.imageList.push(e.target.result);
+                            }
+                        }
+                        /*  */
+                    }
+                },
+                choose() {
+                    this.emojishow=!this.emojishow;
+                },
+                chooseclose(event){
+                    if(event.target.id!=="choose"&&event.target.className.indexOf("emoji")==-1){
+                        this.emojishow=false;
+                    }
+                },
+                select(m){
+                    this.content+='['+m+']';
+                },
+                picture() {
+                    this.$refs.upload.click();
+                },
+                send(){
+                    var _this = this;
+                    var fd = new FormData();
+                    fd.append('content', _this.content);
+                    for (var i = 0; i < _this.imageList.length; i++) {
+                        var f = _this.convertBase64UrlToBlob(_this.imageList[i]);
+                        fd.append('file', f);
+                    }
+                    $.ajax({
+                        url: "/talk/save",
+                        type: "post",
+                        dataType: "json",
+                        data: fd,
+                        contentType: false,//不设置内容类型
+                        processData: false,//不处理数据
+                        mimeType: "multipart/form-data",
+                        success: function (res) {
+                            if (res.code == 0) {
+                                _this.$message({
+                                    message: "操作成功",
+                                    type: 'success'
+                                });
+                            }
+                        },
+                        error: function (res) {
+                            _this.$message.error(res.message);
+                        }
+                    });
+                },
+                view() {
+
+                },
+                checkExist(item){
+                    return this.emojiItems.indexOf(item)>-1;
+                },
+                contentformat(str){
+                    var list = str.match(/\[*\w*\]/g);
+                    var filter = /[\[\]]/g;
+                    if(list){
+                        for(var i=0;i<list.length;i++){
+                            var item=list[i];
+                            var title= item.replace(filter,'');
+                            var tag='<span class="emoji emoji_'+title+'"></span>';
+                            if(this.checkExist(tag)){
+                                str=str.replace(item,tag);
+                            }
+                        }
+                    }
+                    return str;
+                },
+                convertBase64UrlToBlob(urlData) {
+                    var bytes = window.atob(urlData.split(',')[1]);        //去掉url的头，并转换为byte
+                    //处理异常,将ascii码小于0的转换为大于0
+                    var ab = new ArrayBuffer(bytes.length);
+                    var ia = new Uint8Array(ab);
+                    for (var i = 0; i < bytes.length; i++) {
+                        ia[i] = bytes.charCodeAt(i);
+                    }
+                    return new Blob([ab], {type: 'image/png'});
+                }
+            }
+        })
+    </script>
+</body>
+</html>
